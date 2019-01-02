@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".VideoCallActivity">
+
+    <TextureView
+        android:id="@+id/answer"
+        android:background="#8833dd"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <TextureView
+        android:id="@+id/caller"
+        android:background="#223355"
+        android:layout_width="108dp"
+        android:layout_height="192dp"
+        />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        >
+        <Button
+            android:id="@+id/pushStreamBtn"
+            android:layout_width="100dp"
+            android:layout_height="50dp"
+            android:text="推流"/>
+        <Button
+            android:id="@+id/closeBtn"
+            android:layout_width="100dp"
+            android:layout_height="50dp"
+            android:text="挂断"/>
+    </LinearLayout>
+</RelativeLayout>
