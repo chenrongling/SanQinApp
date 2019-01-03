@@ -3,8 +3,13 @@ package com.gotop.sanqinapp;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
+import android.app.Dialog;
+import android.content.Intent;
 import android.graphics.Rect;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextUtils;
@@ -12,6 +17,7 @@ import android.text.TextWatcher;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
+import android.view.WindowManager;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.Button;
 import android.widget.EditText;
@@ -20,6 +26,8 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.gotop.sanqinapp.msg.SanQinClient;
 
 public class LoginActivity extends AppCompatActivity implements View.OnClickListener, View.OnFocusChangeListener, ViewTreeObserver.OnGlobalLayoutListener, TextWatcher {
 
@@ -40,6 +48,8 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
     private TextView mTvLoginForgetPwd;
     private Button mBtLoginRegister;
 
+    private Dialog dialog;
+
     //全局Toast
     private Toast mToast;
 
@@ -50,7 +60,11 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
-
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.hide();
+        }
+        this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         initView();
     }
 
@@ -97,6 +111,19 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
         mEtLoginUsername.addTextChangedListener(this);
         mEtLoginPwd.setOnFocusChangeListener(this);
         mEtLoginPwd.addTextChangedListener(this);
+
+        //设置登入按钮颜色以及不可点击
+        mBtLoginSubmit.setBackgroundResource(R.drawable.bg_login_submit_lock);
+        mBtLoginSubmit.setTextColor(getResources().getColor(R.color.account_lock_font_color));
+        mBtLoginSubmit.setEnabled(false);
+
+        //登入diagog设置
+        dialog = new Dialog(LoginActivity.this, R.style.progress_dialog);
+        dialog.setContentView(R.layout.process_dialog);
+        dialog.setCancelable(false);
+        dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        TextView msg = (TextView) dialog.findViewById(R.id.id_tv_loadingmsg);
+        msg.setText("正在登入，请稍后...");
     }
 
     @Override
@@ -337,15 +364,105 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
         if (!TextUtils.isEmpty(pwd) && !TextUtils.isEmpty(username)) {
             mBtLoginSubmit.setBackgroundResource(R.drawable.bg_login_submit);
             mBtLoginSubmit.setTextColor(getResources().getColor(R.color.white));
+            mBtLoginSubmit.setEnabled(true);
         } else {
             mBtLoginSubmit.setBackgroundResource(R.drawable.bg_login_submit_lock);
             mBtLoginSubmit.setTextColor(getResources().getColor(R.color.account_lock_font_color));
+            mBtLoginSubmit.setEnabled(false);
         }
     }
 
+    /**
+     * 登入后的UI变化操作
+     */
+    private Handler handler = new Handler(){
+        @Override
+        public void handleMessage(Message msg)
+        {
+            switch (msg.what)
+            {
+                case 0:
+                    dialog.dismiss();
+                    Toast.makeText(getApplicationContext(),"账号或密码不正确请重试",Toast.LENGTH_SHORT).show();
+                    break;
+                case 1:
+                    dialog.dismiss();
+
+                    Toast.makeText(getApplicationContext(),"成功",Toast.LENGTH_SHORT).show();
+                    Intent intent = new Intent(LoginActivity.this, VideoActivity.class);
+                    intent.putExtra("testInfo","testInfo");
+                    startActivity(intent);
+/*                     new Thread(){
+                        @Override
+                        public void run(){
+
+                          Message msg = new Message();
+
+                            SanQinClient client = SanQinClient.getInstance();
+                            Map<String, String> result = client.request(null);
+
+                            System.out.println("result--------------------------"+result.get("errorcode"));
+                            System.out.println("push_url--------------------------"+result.get("push_url"));
+                            System.out.println("pull_url--------------------------"+result.get("pull_url"));
+                            System.out.println("url_time--------------------------"+result.get("url_time"));
+
+                            if (result != null){
+                                msg.what = 3;
+                            }
+                            else{
+                                msg.what = 4;
+                            }
+
+                        }
+                    }.start();*/
+
+/*                    Intent intent = new Intent(LoginActivity.this, VideoActivity.class);
+
+
+                    intent.putExtra("errorcode", result.get("errorcode"));
+                    intent.putExtra("push_url", result.get("push_url"));
+                    intent.putExtra("poll_url", result.get("poll_url"));
+                    intent.putExtra("url_time", result.get("url_time"));
+                    startActivity(intent);*/
+                    break;
+                default:
+                    break;
+            }
+
+        }
+    };
+
     //登录
     private void loginRequest() {
-        Toast.makeText(LoginActivity.this, "登入", Toast.LENGTH_SHORT).show();
+        dialog.show();
+        final String username = mEtLoginUsername.getText().toString();
+        final String password = mEtLoginPwd.getText().toString();
+        new Thread(){
+            @Override
+            public void run() {
+
+                Message msg = new Message();
+                SanQinClient client = SanQinClient.getInstance();
+                Long userId = 123321L;
+                String username = "counter";
+                String role = "1";
+                try{
+
+                    boolean result = client.login(userId, username, role);
+                    if(result)
+                        msg.what = 1;
+                    else
+                        msg.what = 0;
+                    handler.sendMessage(msg);
+                }
+                catch(Exception e){
+                    e.printStackTrace();
+                    msg.what = 0;
+                    handler.sendMessage(msg);
+                }
+            }
+        }.start();
+
     }
 
     /**

@@ -7,6 +7,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -19,14 +20,23 @@ import com.pedro.encoder.input.video.CameraHelper;
 import com.pedro.encoder.input.video.CameraOpenException;
 import com.pedro.rtplibrary.rtmp.RtmpCamera2;
 import com.pedro.rtplibrary.view.OpenGlView;
+import com.gotop.sanqinapp.msg.SanQinClient;
+import com.pedro.encoder.input.video.CameraOpenException;
+import com.pedro.rtplibrary.rtmp.RtmpCamera2;
 
 import net.ossrs.rtmp.ConnectCheckerRtmp;
 
 import java.io.IOException;
+import java.util.Map;
 
 import tv.danmaku.ijk.media.player.IMediaPlayer;
 import tv.danmaku.ijk.media.player.IjkMediaPlayer;
 
+/**
+ * More documentation see:
+ * {@link com.pedro.rtplibrary.base.Camera2Base}
+ * {@link com.pedro.rtplibrary.rtmp.RtmpCamera2}
+ */
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class VideoCallActivity2 extends AppCompatActivity
         implements ConnectCheckerRtmp, View.OnClickListener, SurfaceHolder.Callback {
@@ -128,13 +138,13 @@ public class VideoCallActivity2 extends AppCompatActivity
 
         rtmpCamera1 = new RtmpCamera2(surfaceViewLocal, this);
 
-//        rtmpCamera1.switchCamera();
         surfaceViewLocal.getHolder().addCallback(this);
         surfaceViewRemote.getHolder().addCallback(this);
 
         pushUrl = getIntent().getStringExtra("pushUrl");
         pullUrl = getIntent().getStringExtra("pullUrl");
-
+        System.out.printf("pushUrl================"+pushUrl);
+        System.out.printf("pullUrl================"+pullUrl);
     }
 
     private void read() {

@@ -6,9 +6,9 @@ public class SanQinClientTest {
 
     public static void testLogin() {
         SanQinClient client = SanQinClient.getInstance();
-        Long userId = 1L;
-        String username = "Username_TEST";
-        String role = "User";
+        Long userId = 123321L;
+        String username = "counter";
+        String role = "1";
 
         boolean result = client.login(userId, username, role);
         System.out.println(result);
@@ -16,9 +16,9 @@ public class SanQinClientTest {
     
     public static void testLogout() {
         SanQinClient client = SanQinClient.getInstance();
-        Long userId = 1L;
-        String username = "Username_TEST";
-        String role = "User";
+        Long userId = 123321L;
+        String username = "counter";
+        String role = "1";
 
         boolean result = client.logout(userId, username, role);
         System.out.println(result);
@@ -45,6 +45,8 @@ public class SanQinClientTest {
     public static void main(String[] args) {
         System.out.println("testLogin");
         testLogin();
+        System.out.println("testRequest");
+        testRequest();
         System.out.println("testLogout");
         testLogout();
         SanQinClient client = SanQinClient.getInstance();
