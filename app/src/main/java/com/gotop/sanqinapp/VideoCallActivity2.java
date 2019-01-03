@@ -7,7 +7,6 @@ import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -16,23 +15,18 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
-import com.gotop.sanqinapp.msg.SanQinClient;
+import com.pedro.encoder.input.video.CameraHelper;
 import com.pedro.encoder.input.video.CameraOpenException;
 import com.pedro.rtplibrary.rtmp.RtmpCamera2;
+import com.pedro.rtplibrary.view.OpenGlView;
 
 import net.ossrs.rtmp.ConnectCheckerRtmp;
 
 import java.io.IOException;
-import java.util.Map;
 
 import tv.danmaku.ijk.media.player.IMediaPlayer;
 import tv.danmaku.ijk.media.player.IjkMediaPlayer;
 
-/**
- * More documentation see:
- * {@link com.pedro.rtplibrary.base.Camera2Base}
- * {@link com.pedro.rtplibrary.rtmp.RtmpCamera2}
- */
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class VideoCallActivity2 extends AppCompatActivity
         implements ConnectCheckerRtmp, View.OnClickListener, SurfaceHolder.Callback {
@@ -40,9 +34,9 @@ public class VideoCallActivity2 extends AppCompatActivity
     //远端的视图
     private SurfaceView surfaceViewRemote;
     //本地的视图
-    private SurfaceView surfaceViewLocal;
+    private OpenGlView surfaceViewLocal;
 
-    private RtmpCamera2 rtmpCamera2;
+    private RtmpCamera2 rtmpCamera1;
     private View hangupCallView;
     private View switchCameraView;
     private String pullUrl; //拉流地址
@@ -128,11 +122,13 @@ public class VideoCallActivity2 extends AppCompatActivity
 //        rlRemote = (RelativeLayout) findViewById(R.id.rl_remote);
         surfaceViewRemote = (SurfaceView) findViewById(R.id.surfaceview_remote);
 //        rlLocal = (RelativeLayout) findViewById(R.id.rl_local);
-        surfaceViewLocal = (SurfaceView) findViewById(R.id.surfaceview_local);
+        surfaceViewLocal = (OpenGlView) findViewById(R.id.surfaceview_local);
         surfaceViewLocal.setZOrderOnTop(true);
         surfaceViewLocal.setZOrderMediaOverlay(true);
 
-        rtmpCamera2 = new RtmpCamera2(surfaceViewLocal, this);
+        rtmpCamera1 = new RtmpCamera2(surfaceViewLocal, this);
+
+//        rtmpCamera1.switchCamera();
         surfaceViewLocal.getHolder().addCallback(this);
         surfaceViewRemote.getHolder().addCallback(this);
 
@@ -154,14 +150,15 @@ public class VideoCallActivity2 extends AppCompatActivity
     }
 
     @Override
-    protected void onDestroy() {
+    protected void onStop() {
+        System.out.println("onDestroy");
         stopPullStream();
         stopPushStream();
 
         if (handler != null) {
             handler.removeCallbacksAndMessages(null);
         }
-        super.onDestroy();
+        super.onStop();
     }
 
     @Override
@@ -182,7 +179,7 @@ public class VideoCallActivity2 extends AppCompatActivity
             public void run() {
                 Toast.makeText(VideoCallActivity2.this, "Connection failed. " + reason,
                         Toast.LENGTH_SHORT).show();
-                rtmpCamera2.stopStream();
+                rtmpCamera1.stopStream();
             }
         });
     }
@@ -219,9 +216,9 @@ public class VideoCallActivity2 extends AppCompatActivity
 
     // 开始推流
     private boolean startPushStream(String url) {
-        if (!rtmpCamera2.isStreaming()) { // start
-            if (rtmpCamera2.prepareAudio() && rtmpCamera2.prepareVideo()) {
-                rtmpCamera2.startStream(url);
+        if (!rtmpCamera1.isStreaming()) { // start
+            if (rtmpCamera1.prepareAudio() && rtmpCamera1.prepareVideo()) {
+                rtmpCamera1.startStream(url);
                 return true;
             } else {
                 Toast.makeText(this, "Error preparing stream, This device cant do it",
@@ -234,9 +231,9 @@ public class VideoCallActivity2 extends AppCompatActivity
 
     // 结束推流
     private void stopPushStream() {
-        if (rtmpCamera2 != null) {
-            if (rtmpCamera2.isStreaming()) {
-                rtmpCamera2.stopStream();
+        if (rtmpCamera1 != null) {
+            if (rtmpCamera1.isStreaming()) {
+                rtmpCamera1.stopStream();
             }
         }
     }
@@ -263,11 +260,12 @@ public class VideoCallActivity2 extends AppCompatActivity
                 Toast.makeText(getApplicationContext(), "按钮：切换语音",Toast.LENGTH_SHORT).show();
                 break;
             case R.id.tv_hangup_call:
+                finish();
                 Toast.makeText(getApplicationContext(), "按钮：挂断",Toast.LENGTH_SHORT).show();
                 break;
-            case R.id.switch_camera:
+            case R.id.tv_switch_camera:
                 try {
-                    rtmpCamera2.switchCamera();
+                    rtmpCamera1.switchCamera();
                 } catch (CameraOpenException e) {
                     Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
                 }
@@ -290,8 +288,8 @@ public class VideoCallActivity2 extends AppCompatActivity
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
         if (surfaceViewLocal.getHolder().equals(holder)) {
-            System.out.println("surfaceViewLocal surfaceChanged");
-            rtmpCamera2.startPreview();
+            System.out.println("surfaceViewLocal surfaceChanged" + CameraHelper.getCameraOrientation(VideoCallActivity2.this));
+            rtmpCamera1.startPreview(CameraHelper.Facing.FRONT, 90);
         } else if (surfaceViewRemote.getHolder().equals(holder)) {
 
         }
@@ -300,10 +298,10 @@ public class VideoCallActivity2 extends AppCompatActivity
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
         if (surfaceViewLocal.getHolder().equals(holder)) {
-            if (rtmpCamera2.isStreaming()) {
-                rtmpCamera2.stopStream();
+            if (rtmpCamera1 != null && rtmpCamera1.isStreaming()) {
+                rtmpCamera1.stopStream();
             }
-            rtmpCamera2.stopPreview();
+            rtmpCamera1.stopPreview();
         }
     }
 
@@ -414,11 +412,11 @@ public class VideoCallActivity2 extends AppCompatActivity
         //播放前的探测时间
         mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "analyzeduration", 50000);
         //播放前的探测Size，默认是1M, 改小一点会出画面更快
-        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "probsize", 4096);
+        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "probsize", 1024);
 
         if (isLive) {
             // 最大缓存大小是3秒，可以依据自己的需求修改
-            mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "max_cached_duration", 3000);
+            mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "max_cached_duration", 0);
             mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "infbuf", 1);  // 无限读
             mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "packet-buffering", 0);//  关闭播放器缓冲
         } else {

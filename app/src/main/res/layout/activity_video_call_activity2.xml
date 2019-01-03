@@ -12,12 +12,24 @@
             android:layout_height="match_parent"
             />
 
-        <SurfaceView
-            android:id="@+id/surfaceview_local"
-            android:layout_alignParentRight="true"
-            android:layout_width="240px"
-            android:layout_height="320px"
-            android:background="#ff0000" />
+        <!--<SurfaceView-->
+            <!--android:id="@+id/surfaceview_local"-->
+            <!--android:layout_alignParentRight="true"-->
+            <!--android:layout_width="240px"-->
+            <!--android:layout_height="320px"-->
+            <!--android:background="#ff0000" />-->
+
+    <com.pedro.rtplibrary.view.OpenGlView
+        android:layout_width="240px"
+        android:layout_height="320px"
+        android:id="@+id/surfaceview_local"
+        android:layout_alignParentRight="true"
+        app:keepAspectRatio="false"
+        app:AAEnabled="false"
+        app:numFilters="1"
+        app:isFlipHorizontal="false"
+        app:isFlipVertical="false"
+        />
 
     <!--通话时显示的-->
     <LinearLayout
