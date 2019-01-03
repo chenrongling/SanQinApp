@@ -50,6 +50,7 @@
         <activity android:name=".PlayActivity2"
             android:screenOrientation="portrait"
             ></activity>
+        <activity android:name=".VideoActivity" />
     </application>
 
 </manifest>
